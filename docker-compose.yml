@@ -1,0 +1,52 @@
+services:
+  device:
+    build: .
+    image: dosing-bench:latest
+    command: uvicorn app.device.main:app --host 0.0.0.0 --port 8000
+    environment:
+      DEVICE_DB: /data/device.db
+    volumes:
+      - device-data:/data
+    ports:
+      - "8100:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/healthz', timeout=2).status==200 else 1)"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  control1:
+    image: dosing-bench:latest
+    build: .
+    command: uvicorn app.control.main:app --host 0.0.0.0 --port 8000
+    environment:
+      CONTROL_DB: /data/control.db
+      DEVICE_URL: http://device:8000
+      WORKER_ID: control1
+    volumes:
+      - control-data:/data
+    ports:
+      - "8001:8000"
+    depends_on:
+      device:
+        condition: service_healthy
+
+  control2:
+    image: dosing-bench:latest
+    build: .
+    command: uvicorn app.control.main:app --host 0.0.0.0 --port 8000
+    environment:
+      CONTROL_DB: /data/control.db
+      DEVICE_URL: http://device:8000
+      WORKER_ID: control2
+    volumes:
+      - control-data:/data
+    ports:
+      - "8002:8000"
+    depends_on:
+      device:
+        condition: service_healthy
+
+volumes:
+  control-data:
+  device-data:
