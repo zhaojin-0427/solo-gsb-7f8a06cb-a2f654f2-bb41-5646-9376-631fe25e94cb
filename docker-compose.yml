@@ -1,0 +1,44 @@
+name: dosing-lab
+
+services:
+  device:
+    build: ./device
+    environment:
+      DEVICE_DB: /data/device.db
+    volumes:
+      - device-data:/data
+    ports:
+      - "9000:8000"
+    restart: unless-stopped
+
+  control-1:
+    build: ./control
+    environment:
+      CONTROL_DB: /data/control.db
+      DEVICE_URL: http://device:8000
+      CONTROL_ID: control-1
+    volumes:
+      - control-data:/data
+    ports:
+      - "8001:8000"
+    depends_on:
+      - device
+    restart: unless-stopped
+
+  control-2:
+    build: ./control
+    environment:
+      CONTROL_DB: /data/control.db
+      DEVICE_URL: http://device:8000
+      CONTROL_ID: control-2
+    volumes:
+      - control-data:/data
+    ports:
+      - "8002:8000"
+    depends_on:
+      - device
+    restart: unless-stopped
+
+volumes:
+  device-data:
+  control-data:
